@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+#
+# Summary: Display help for all commands
+# 
+# Usage: rbenv helpall  [[--usage] COMMAND]
+#
+#   --usage     Display only usage.
+#
+# Display list for all command when no args are passed.
+# Display help for a command when args are passed.
+#
+
+#
+# rbenv-helpal - Display help for all subcommands of rbenv.
+# Copyright (c) 2022 Koichi OKADA. All rights reserved.
+# This script is distributed under the MIT license.
+# http://www.opensource.org/licenses/mit-license.php
+#
+
+set -e
+[ -n "$RBENV_DEBUG" ] && set -x
+
+# Provide rbenv completions
+if [ "$1" = "--complete" ]; then
+  echo --usage
+  exec rbenv-commands
+fi
+
+function helpall_summary () #
+{
+  cat <<-EOD
+		Usage: rbenv <command> [<args>]
+		
+		rbenv commands are:
+		EOD
+  local pathes dir target commands=()
+  readarray -td: pathes < <(echo -n $PATH)
+  for dir in "${pathes[@]}"; do
+    for file in "$dir/rbenv-"*; do
+      [ -e "$file" -a -x "$file" ] && commands+=( "$file" )
+    done
+  done
+  grep -E '^#\s*Summary:\s*' "${commands[@]}" \
+  | sed -E	's/^.*rbenv-(sh-)?(\S*):#\s*Summary:\s*/\t\2\t/g' \
+  | column -t -s $'\t' \
+  | sort -V
+  cat <<-EOD
+		
+		See \`rbenv help <command>' for information on a specific command.
+		For full documentation, see: https://github.com/rbenv/rbenv#readme
+		EOD
+}
+
+function helpall () # [[--usage] COMMAND]
+{
+  if (( $# <= 0 )); then
+    helpall_summary
+  else
+    exec rbenv-help "$@"
+  fi
+}
+
+helpall "$@"
